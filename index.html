@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSTV Encoder/Decoder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input[type="file"],
+        input[type="text"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 12px 30px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .loader.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 SSTV Transceiver</h1>
+        <p class="subtitle">Encode files to audio or decode audio back to files</p>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('encode')">📤 Encode</button>
+            <button class="tab" onclick="switchTab('decode')">📥 Decode</button>
+        </div>
+        
+        <!-- Encode Tab -->
+        <div id="encode-tab" class="tab-content active">
+            <form id="encode-form" onsubmit="handleEncode(event)">
+                <div class="form-group">
+                    <label>Select File (Image, Text, etc.)</label>
+                    <input type="file" id="encode-file" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Encryption Key (Optional)</label>
+                    <input type="password" id="encode-key" placeholder="Leave empty for no encryption">
+                </div>
+                
+                <button type="submit" class="btn">Generate Audio</button>
+            </form>
+            
+            <div class="loader" id="encode-loader">
+                <div class="spinner"></div>
+                <p>Encoding... Please wait</p>
+            </div>
+            
+            <div class="result" id="encode-result"></div>
+        </div>
+        
+        <!-- Decode Tab -->
+        <div id="decode-tab" class="tab-content">
+            <form id="decode-form" onsubmit="handleDecode(event)">
+                <div class="form-group">
+                    <label>Select Audio File (.wav)</label>
+                    <input type="file" id="decode-file" accept=".wav" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Decryption Key (If encrypted)</label>
+                    <input type="password" id="decode-key" placeholder="Leave empty if not encrypted">
+                </div>
+                
+                <div class="form-group">
+                    <label>Output Format</label>
+                    <select id="decode-format">
+                        <option value="png">PNG Image</option>
+                        <option value="jpg">JPG Image</option>
+                        <option value="txt">Text File</option>
+                        <option value="bin">Binary File</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn">Decode Audio</button>
+            </form>
+            
+            <div class="loader" id="decode-loader">
+                <div class="spinner"></div>
+                <p>Decoding... Please wait</p>
+            </div>
+            
+            <div class="result" id="decode-result"></div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tab + '-tab').classList.add('active');
+            
+            // Hide results
+            document.querySelectorAll('.result').forEach(r => r.classList.remove('show'));
+        }
+        
+        async function handleEncode(event) {
+            event.preventDefault();
+            
+            const fileInput = document.getElementById('encode-file');
+            const keyInput = document.getElementById('encode-key');
+            const loader = document.getElementById('encode-loader');
+            const result = document.getElementById('encode-result');
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('key', keyInput.value);
+            
+            loader.classList.add('show');
+            result.classList.remove('show');
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/encode', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    result.className = 'result success show';
+                    result.innerHTML = `
+                        <h3>✅ Success!</h3>
+                        <p>Audio file generated: <strong>${data.filename}</strong></p>
+                        <p>Encryption: ${data.encrypted ? '🔒 Enabled' : '🔓 Disabled'}</p>
+                        <a href="${data.download_url}" class="download-btn">⬇️ Download Audio</a>
+                    `;
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                result.className = 'result error show';
+                result.innerHTML = `<h3>❌ Error</h3><p>${error.message}</p>`;
+            } finally {
+                loader.classList.remove('show');
+                submitBtn.disabled = false;
+            }
+        }
+        
+        async function handleDecode(event) {
+            event.preventDefault();
+            
+            const fileInput = document.getElementById('decode-file');
+            const keyInput = document.getElementById('decode-key');
+            const formatSelect = document.getElementById('decode-format');
+            const loader = document.getElementById('decode-loader');
+            const result = document.getElementById('decode-result');
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('key', keyInput.value);
+            formData.append('format', formatSelect.value);
+            
+            loader.classList.add('show');
+            result.classList.remove('show');
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/decode', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    result.className = 'result success show';
+                    result.innerHTML = `
+                        <h3>✅ Success!</h3>
+                        <p>File decoded: <strong>${data.filename}</strong></p>
+                        <p>Decryption: ${data.decrypted ? '🔓 Applied' : '➖ Not applied'}</p>
+                        <a href="${data.download_url}" class="download-btn">⬇️ Download File</a>
+                    `;
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                result.className = 'result error show';
+                result.innerHTML = `<h3>❌ Error</h3><p>${error.message}</p>`;
+            } finally {
+                loader.classList.remove('show');
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
