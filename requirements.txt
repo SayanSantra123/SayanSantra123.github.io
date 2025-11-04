@@ -1,0 +1,23 @@
+# SSTV Audio Transceiver Requirements
+# Install with: pip install -r requirements.txt
+
+# Core SSTV
+amodem
+
+# Image Processing
+Pillow>=9.0.0
+numpy>=1.21.0
+
+# Audio Processing
+pyaudio>=0.2.11
+scipy>=1.7.0
+
+
+# Encryption
+pycryptodome>=3.15.0
+
+# Optional: Noise Reduction (for better audio quality)
+# noisereduce>=2.0.0
+
+# GUI (built-in with Python)
+# tkinter - comes with Python standard library
