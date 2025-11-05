@@ -1,6 +1,11 @@
 # SSTV Audio Transceiver Requirements
 # Install with: pip install -r requirements.txt
 
+# Web Framework
+Flask>=2.3.0
+Werkzeug>=2.3.0
+gunicorn>=21.2.0
+
 # Core SSTV
 amodem
 
